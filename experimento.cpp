@@ -96,7 +96,7 @@ int main() {
     }
 
     std::ofstream fout(output_csv);
-    fout << "Bloque,Algoritmo,Paralelizacion,Repeticion,ErrorAbsoluto\n";
+    fout << "Bloque,Algoritmo,Paralelizacion,Repeticion,ErrorAbsoluto,Theorical_min,Min_Found\n";
 
     for (const auto &row : experiment) {
         try {
@@ -104,19 +104,19 @@ int main() {
             double theoretical_min = get_theoretical_minimum(row.bloque);
 
             algorithm algo = [&]() -> algorithm {
-                if (row.algoritmo == "SGA") return algorithm(sga());
-                else if (row.algoritmo == "PSO") return algorithm(pso());
+                if (row.algoritmo == "SGA") return algorithm(sga(300));
+                else if (row.algoritmo == "PSO") return algorithm(pso(300));
                 else throw std::runtime_error("Algoritmo desconocido: " + row.algoritmo);
             }();
 
             bool paralelo = (row.paralelizacion == "Paralela");
 
-            population pop(prob, 30);
+            population pop(prob, 100);
 
             if (paralelo) {
                 archipelago archi;
                 for (int i = 0; i < 4; ++i) {
-                    archi.push_back(island{algo, prob, 30});
+                    archi.push_back(island{algo, prob, 100});
                 }
 
                 archi.evolve();
@@ -129,7 +129,7 @@ int main() {
                 }
 
                 double diff = std::abs(best_f - theoretical_min);
-                fout << row.bloque << "," << row.algoritmo << "," << row.paralelizacion << "," << row.repeticion << "," << diff << "\n";
+                fout << row.bloque << "," << row.algoritmo << "," << row.paralelizacion << "," << row.repeticion << "," << diff << "," << theoretical_min << "," << best_f << "\n";
 
             } else {
                 algo.set_verbosity(0);
@@ -137,7 +137,7 @@ int main() {
 
                 double best_f = pop.champion_f()[0];
                 double diff = std::abs(best_f - theoretical_min);
-                fout << row.bloque << "," << row.algoritmo << "," << row.paralelizacion << "," << row.repeticion << "," << diff << "\n";
+                fout << row.bloque << "," << row.algoritmo << "," << row.paralelizacion << "," << row.repeticion << "," << diff << "," << theoretical_min << "," << best_f << "\n";
             }
 
         } catch (const std::exception &e) {
